@@ -9,7 +9,7 @@ Six spot illustrations for the KaneAI playground's session setup state (spec §6
 | `kane-settings.mjs` | Applying session settings | The same phone, `gears-r13` at 0.4 (the automation setup's device spot, smaller) | PASS, accent 0.060 (the large gear's hub) |
 | `kane-permissions.mjs` | Applying app permissions | `handing-key-r82` at 0.7 | PASS, accent 0.086 (the key) |
 | `kane-launch.mjs` | Launching StoreFinder | `rocket-r65` at 0.92 | PASS, accent 0.102 (the window's ring) |
-| `kane-failed.mjs` | Applying app permissions, failed | `handing-key-r82` at 0.7, `x-badge-r121` at 0.42 | WARN, line evenness 0.221 from the solid badge (the hands alone: 0.174); accent 0.068 (the key) |
+| `kane-failed.mjs` | Applying app permissions, failed (v1; unused since v2, where the step warns and the setup carries on, spec §13.5) | `handing-key-r82` at 0.7, `x-badge-r121` at 0.42 | WARN, line evenness 0.221 from the solid badge (the hands alone: 0.174); accent 0.068 (the key) |
 
 Each `.png` is the kit's 2x preview of its 600 × 500 artboard. `_kane-lib.mjs` holds the shared helpers: `part()` picks layers of a lifted drawing so one drawing can become several moving groups, `phone()` is r134's phone as the automation setup drew it, and `PHONE` is where the three phone spots hold it.
 

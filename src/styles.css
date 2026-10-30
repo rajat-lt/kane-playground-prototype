@@ -194,6 +194,8 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .lt-tag--secondary { border-color: var(--border-default); color: var(--fg-muted); }
 .lt-tag--danger { border-color: var(--danger-emphasis); color: var(--danger-fg); }
 .lt-tag--success { border-color: var(--success-emphasis); color: var(--success-fg); }
+/* LTTag variant="attention" (guidelines/lttag.md): a step's count of failed items (spec §13.5). */
+.lt-tag--attention { border-color: var(--attention-emphasis); color: var(--attention-fg); }
 /* LTToken (v6): a removable filter value, a pill with its remove button. */
 .lt-token {
   display: inline-flex; align-items: center; gap: 2px; min-width: 0; max-width: 100%; height: 28px;
@@ -509,6 +511,11 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .step-pane__count { margin: 0; font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); }
 .step-pane__actions { display: flex; align-items: center; gap: var(--space-2); }
 .step-pane__list { flex: 1; min-height: 0; overflow-y: auto; display: flex; align-items: center; justify-content: center; padding: var(--space-3) 0; }
+/* While setting up, the stage fills the list's place (spec §13.3), with
+   less room around it than it had in the device pane: the step pane keeps
+   its own padding. */
+.step-pane__list.is-setup { align-items: stretch; padding: 0; }
+.step-pane__list.is-setup .su-stage { padding: var(--space-6) var(--space-4); }
 .step-pane .lt-blank { text-align: center; }
 /* The composer, pinned at the foot (§3.2, §5). */
 .composer { flex: none; padding: var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-2); }
@@ -516,28 +523,27 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .composer .lt-textarea textarea { border: 0; padding: 0; box-shadow: none; background: transparent; }
 .composer__row { display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-2); }
 .composer__modes { display: flex; gap: var(--space-1); }
-/* The device pane flexes; its foot stays (§3.3, §6). Its corners take
-   radius 2 (6px): the pattern's 8px is not a token (spec §8). */
+/* The device pane flexes (§3.3, §6). Its corners take radius 2 (6px): the
+   pattern's 8px is not a token (spec §8). Since v2 it has K3's header over
+   the device, and no foot (spec C17). */
 .device-pane { flex: 1; min-width: 0; min-height: 0; display: flex; padding: var(--space-4); }
 .device-pane__frame {
   flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column;
   border: 1px solid var(--border-default); border-radius: var(--radius-2); overflow: hidden; background: var(--canvas-default);
 }
-.device-pane__screen { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: var(--space-6); }
-.device-pane__foot {
-  flex: none; display: flex; align-items: center; gap: var(--space-3);
-  padding: var(--space-2) var(--space-3); border-top: 1px solid var(--border-muted);
+/* The header recedes: the session's facts, muted, and its cloud (spec §13.6). */
+.device-head {
+  flex: none; display: flex; align-items: center; gap: var(--space-2); min-width: 0;
+  padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border-muted);
 }
-.device-pane__live { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); }
-/* The device, plainly: a bezel, its island and the app's name (spec §8). */
-.phone {
-  position: relative; height: min(100%, 560px); aspect-ratio: 9 / 19.5; display: flex; align-items: center; justify-content: center;
-  border: 8px solid var(--fg-default); border-radius: 40px; background: var(--canvas-default);
+.device-head__facts {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--fg-muted); font-size: var(--font-14); line-height: var(--lh-14);
 }
-.phone__island { position: absolute; top: 12px; left: 50%; width: 72px; height: 20px; transform: translateX(-50%); border-radius: var(--radius-pill); background: var(--fg-default); }
-.phone__app { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
-.phone__icon { color: var(--accent-fg); }
-.phone__name { font-size: var(--font-16); line-height: var(--lh-16); font-weight: var(--weight-bold); }
+/* The device, centred, as large as the pane allows (device.jsx sets the
+   scale), 24px below the header; its cable runs off the pane's foot, as in K3. */
+.device-stage { position: relative; flex: 1; min-height: 0; display: flex; justify-content: center; overflow: hidden; }
+.iphone-fit { position: relative; flex: none; margin-top: 24px; }
 
 /* ---------------- session setup (spec kane-playground-setup.md) ---------------- */
 /* The automation setup's stage, carousel, typing, shimmer, dots and list,
@@ -559,7 +565,10 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .su-hero__ill { display: block; width: 120px; height: 113px; animation: su-fade 300ms var(--ease-out) both; }
 .su-hero__ill svg { display: block; width: 120px; height: 113px; overflow: visible; }
 .su-hero__title { margin: var(--space-4) 0 0; font-size: var(--font-16); line-height: var(--lh-16); font-weight: var(--weight-bold); }
-.su-hero.is-failed .su-hero__title { color: var(--danger-fg); }
+/* The warning (spec §13.5): the title in attention yellow, the spot held
+   still where its loop is. */
+.su-hero.is-warning .su-hero__title { color: var(--attention-fg); }
+.su-hero.is-warning .su-hero__ill * { animation-play-state: paused !important; }
 /* The long-step note keeps its room when hidden, so the stage never jumps. */
 .su-hero__note {
   min-height: var(--lh-12); margin: var(--space-1) 0 0; color: var(--fg-muted);
@@ -586,12 +595,13 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .su-type__ghost, .su-type__text { grid-row: 1; grid-column: 1; white-space: pre; }
 .su-type__ghost { visibility: hidden; }
 .su-type__end { grid-row: 1; grid-column: 2; display: flex; align-items: center; height: var(--lh-14); }
-/* A finished sub-step's green tick, or a failed one's red cross, sits in
-   front of its words, 8px away, hung outside the line's box so the words
-   stay put (automation setup v4 item 1). */
+/* A finished sub-step's green tick, or the warning triangle of one that
+   ends its step with failed items, sits in front of its words, 8px away,
+   hung outside the line's box so the words stay put (automation setup v4
+   item 1, spec §13.5). */
 .su-type__mark { position: absolute; top: 50%; right: 100%; margin-right: var(--space-2); transform: translateY(-50%); }
 .su-type.is-done .su-type__mark { color: var(--success-fg); }
-.su-type.is-failed .su-type__mark, .su-type.is-failed .su-type__text { color: var(--danger-fg); }
+.su-type.is-warning .su-type__mark { color: var(--attention-fg); }
 /* Every running sub-step shimmers, a soft band sweeping across its words. */
 .su-type.is-current .su-type__text {
   background: linear-gradient(90deg, var(--fg-default) 0%, var(--fg-default) 42%, var(--fg-disabled) 50%, var(--fg-default) 58%, var(--fg-default) 100%);
@@ -618,13 +628,14 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 @keyframes su-dot-2 { 0%, 30% { opacity: 0; } 45%, 85% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes su-dot-3 { 0%, 50% { opacity: 0; } 65%, 85% { opacity: 1; } 100% { opacity: 0; } }
 
-/* Badges: blue spinner running, green tick done, dashed circle pending, red
-   cross failed. A white disc behind each hides the rail. */
+/* Badges: blue spinner running, green tick done, dashed circle pending, a
+   yellow warning triangle for a step with failed items. A white disc behind
+   each hides the rail. */
 .su-badge { flex: none; display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--canvas-default); }
 .su-badge.is-done { color: var(--success-fg); }
 .su-badge.is-current { color: var(--accent-fg); }
 .su-badge.is-pending { color: var(--fg-muted); }
-.su-badge.is-failed { color: var(--danger-fg); }
+.su-badge.is-warning { color: var(--attention-fg); }
 /* The main steps, in order: a centred block, rows left-aligned on one rail. */
 .su-steps { position: relative; list-style: none; margin: 0; padding: 0; width: fit-content; max-width: 100%; }
 .su-steps::before { content: ''; position: absolute; left: 7.5px; top: 16px; bottom: 16px; width: 1px; background: var(--border-muted); }
@@ -632,8 +643,9 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
   position: relative; display: flex; align-items: center; gap: var(--space-2); height: 32px;
   font-size: var(--font-14); line-height: var(--lh-14); white-space: nowrap;
 }
-.su-step.is-current, .su-step.is-failed { font-weight: var(--weight-semibold); }
-.su-step.is-failed { color: var(--danger-fg); }
+.su-step.is-current, .su-step.is-focus { font-weight: var(--weight-semibold); }
+/* A step with failed items keeps their count beside its name (spec §13.5). */
+.su-step .lt-tag { margin-left: var(--space-1); }
 .su-step.is-pending .su-step__title { color: var(--fg-muted); }
 
 @keyframes su-fade { from { opacity: 0; } }
@@ -641,8 +653,8 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .is-revealing { animation: su-reveal 320ms var(--ease-out) both; }
 
 /* The spots' motion (brief item 10): transform and opacity only, each
-   looping for as long as its step runs, like a GIF. The failed spot holds
-   still. */
+   looping for as long as its step runs, like a GIF. A step's spot holds
+   still while the step shows a warning. */
 .su-hero__ill g { transform-box: fill-box; transform-origin: center; }
 /* Allocating: the magnifier searches in a small loop at the phone's corner. */
 @keyframes su-search {
@@ -689,11 +701,193 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .su-hero__ill #su-launch-smoke-5 { animation-delay: -1.6s; }
 .su-hero__ill #su-launch-smoke-6 { animation-delay: -2s; }
 
+/* ---------------- the device, live (spec §13.4) ----------------
+   Drawn in iOS points at its real proportions, then scaled to the pane
+   (device.jsx). Its colours are the device's own, not tokens: the frame,
+   the wallpaper, and iOS's system colours in its light appearance (spec
+   §13.8). Every animation names itself in the shorthand or uses longhands:
+   the build's CSS minifier drops a nameless shorthand (spec §3 item 6). */
+.iphone {
+  position: absolute; left: 0; top: 0; width: 466px; height: 982px; transform-origin: 0 0;
+  border-radius: 76px; background: #1c1c1e;
+  box-shadow: inset 0 0 0 2px #48484a, inset 0 0 0 5px #0d0d0f, 0 48px 96px rgba(31, 35, 40, 0.2), 0 12px 28px rgba(31, 35, 40, 0.14);
+  transition: background 500ms var(--ease-out), box-shadow 500ms var(--ease-out);
+}
+.iphone > * { transition: opacity 500ms var(--ease-out); }
+/* While a device is found, the pane holds its outline, a skeleton
+   (ux-persona.md §3: transient loading gets a skeleton); the device fades
+   in once it is allocated. */
+.iphone.is-absent { background: var(--canvas-subtle); box-shadow: inset 0 0 0 3px var(--border-default); }
+.iphone.is-absent > * { opacity: 0; }
+.iphone__screen { position: absolute; inset: 13px; overflow: hidden; border-radius: 63px; background: #000; }
+.iphone__island { position: absolute; top: 24px; left: 50%; z-index: 5; width: 124px; height: 36px; margin-left: -62px; border-radius: 18px; background: #000; }
+.iphone__button { position: absolute; width: 5px; border-radius: 3px; background: #2c2c2e; }
+.iphone__button.is-action { left: -4px; top: 196px; height: 36px; }
+.iphone__button.is-up { left: -4px; top: 262px; height: 66px; }
+.iphone__button.is-down { left: -4px; top: 344px; height: 66px; }
+.iphone__button.is-side { right: -4px; top: 300px; height: 104px; }
+/* The cable, as in K3: a USB-C plug in the port, then the lead, running off
+   the pane. */
+.iphone__cable {
+  position: absolute; top: calc(100% - 2px); left: 50%; width: 52px; height: 74px; margin-left: -26px;
+  border-radius: 4px 4px 10px 10px; background: linear-gradient(90deg, #c7c7cc, #f2f2f7 45%, #d1d1d6);
+}
+.iphone__cable::after {
+  content: ''; position: absolute; top: 100%; left: 50%; width: 18px; height: 900px; margin-left: -9px;
+  background: linear-gradient(90deg, #d1d1d6, #f5f5f7 50%, #d1d1d6);
+}
+
+/* The screen. */
+.ios {
+  position: absolute; inset: 0; overflow: hidden; color: #000;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, sans-serif;
+  font-size: 17px; line-height: 1.25; letter-spacing: -0.2px; -webkit-font-smoothing: antialiased;
+}
+.ios.is-off { background: #000; }
+.ios.is-boot { display: flex; align-items: center; justify-content: center; background: #000; }
+.ios-boot__logo { color: #f5f5f7; font-size: 112px; line-height: 1; animation: ios-fade 600ms ease-out both; }
+@keyframes ios-fade { from { opacity: 0; } }
+/* The status bar's time and icons sit either side of the Dynamic Island. */
+.ios-status {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 4; display: flex; align-items: center; justify-content: space-between;
+  height: 58px; font-size: 17px; font-weight: 600; letter-spacing: 0; pointer-events: none;
+}
+.ios-status__ear { display: flex; align-items: center; justify-content: center; gap: 6px; width: 158px; }
+.ios-status.is-light, .ios-home-indicator.is-light { color: #fff; }
+.ios-status.is-dark, .ios-home-indicator.is-dark { color: #000; }
+.ios-home-indicator {
+  position: absolute; bottom: 8px; left: 50%; z-index: 4; width: 144px; height: 5px; margin-left: -72px;
+  border-radius: 3px; background: currentColor;
+}
+
+/* The home screen: a wallpaper, four columns of apps, the Search pill and
+   the dock. */
+.ios-home {
+  position: absolute; inset: 0; animation: ios-fade 500ms ease-out both;
+  background:
+    radial-gradient(120% 70% at 15% 0%, #4a6fd8 0%, rgba(74, 111, 216, 0) 60%),
+    radial-gradient(110% 60% at 100% 100%, #14a39a 0%, rgba(20, 163, 154, 0) 60%),
+    linear-gradient(180deg, #1c2550 0%, #24345f 55%, #183c57 100%);
+}
+.ios-home__grid { position: absolute; top: 78px; left: 24px; display: grid; grid-template-columns: repeat(4, 98px); grid-auto-rows: 106px; }
+.ios-app { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ios-app__tile {
+  position: relative; display: flex; align-items: center; justify-content: center; width: 64px; height: 64px;
+  overflow: hidden; border-radius: 15px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); transition: filter 120ms;
+}
+/* A tapped app dims under the finger, as iOS's do. */
+.ios-app.is-pressed .ios-app__tile { filter: brightness(0.6); }
+/* An app that arrives pops in, then installs behind a veil and a ring. */
+.ios-app.is-new { animation: ios-pop 320ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+@keyframes ios-pop { from { transform: scale(0.4); opacity: 0; } }
+.ios-app__veil {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.45); opacity: 0; transition: opacity 400ms ease-out;
+}
+.ios-app__veil.is-on { opacity: 1; }
+.ios-app__name {
+  max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.ios-home__search {
+  position: absolute; bottom: 126px; left: 50%; display: flex; align-items: center; gap: 4px; height: 30px; padding: 0 12px;
+  transform: translateX(-50%); border-radius: 15px; background: rgba(255, 255, 255, 0.22); color: #fff;
+  font-size: 14px; font-weight: 600; letter-spacing: 0; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+}
+.ios-home__dock {
+  position: absolute; left: 14px; right: 14px; bottom: 14px; display: grid; grid-template-columns: repeat(4, 1fr); place-items: center;
+  height: 98px; border-radius: 38px; background: rgba(255, 255, 255, 0.22); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+}
+
+/* An app's window grows out of its icon and shrinks back into it (device.jsx
+   sets --dx and --dy, the icon's centre from the screen's). */
+.ios-window { position: absolute; inset: 0; z-index: 2; overflow: hidden; border-radius: 63px; animation: ios-open 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.ios-window.is-closing { animation: ios-close 340ms cubic-bezier(0.4, 0, 0.6, 1) both; }
+@keyframes ios-open { from { transform: translate(var(--dx), var(--dy)) scale(0.145, 0.067); opacity: 0; } 35% { opacity: 1; } }
+@keyframes ios-close { to { transform: translate(var(--dx), var(--dy)) scale(0.145, 0.067); opacity: 0; } }
+
+/* Settings: pages slide in from the right and back out to it. */
+.ios-settings, .ios-page { position: absolute; inset: 0; overflow: hidden; background: #f2f2f7; }
+.ios-page.is-arriving, .ios-page.is-leaving { z-index: 2; box-shadow: -8px 0 24px rgba(0, 0, 0, 0.08); }
+.ios-page.is-behind, .ios-page.is-returning { z-index: 1; }
+.ios-page.is-arriving { animation: ios-arrive 360ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.ios-page.is-behind { animation: ios-behind 360ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.ios-page.is-leaving { animation: ios-leave 360ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.ios-page.is-returning { animation: ios-return 360ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes ios-arrive { from { transform: translateX(100%); } }
+@keyframes ios-behind { to { transform: translateX(-30%); filter: brightness(0.94); } }
+@keyframes ios-leave { to { transform: translateX(100%); } }
+@keyframes ios-return { from { transform: translateX(-30%); filter: brightness(0.94); } }
+/* A page's content, below the status bar; Settings' first page scrolls to
+   its end, where Apps is. */
+.ios-scroll { padding: 58px 0 40px; transition: transform 800ms cubic-bezier(0.25, 0.8, 0.3, 1); }
+.ios-scroll.is-scrolled { transform: translateY(calc(956px - 100%)); }
+.ios-large { padding: 4px 20px 10px; font-size: 34px; font-weight: 700; line-height: 41px; letter-spacing: 0.4px; }
+/* Scrolled, the large title gives way to the bar's own. */
+.ios-bar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: flex; align-items: flex-end; justify-content: center;
+  height: 102px; padding-bottom: 12px; border-bottom: 0.5px solid rgba(60, 60, 67, 0.29); background: rgba(249, 249, 249, 0.8);
+  -webkit-backdrop-filter: saturate(1.8) blur(20px); backdrop-filter: saturate(1.8) blur(20px); opacity: 0; transition: opacity 250ms;
+}
+.ios-bar.is-on { opacity: 1; }
+.ios-nav { position: relative; display: flex; align-items: center; justify-content: center; height: 44px; margin-bottom: 8px; }
+.ios-nav__back { position: absolute; left: 4px; display: flex; align-items: center; color: #007aff; }
+.ios-nav__title { font-weight: 600; }
+.ios-searchfield {
+  display: flex; align-items: center; gap: 6px; height: 36px; margin: 0 16px 20px; padding: 0 8px;
+  border-radius: 10px; background: rgba(118, 118, 128, 0.12); color: rgba(60, 60, 67, 0.6);
+}
+.ios-group { margin: 0 16px 32px; }
+.ios-group__header { padding: 0 16px 7px; color: rgba(60, 60, 67, 0.6); font-size: 13px; letter-spacing: 0; text-transform: uppercase; }
+.ios-group__rows { overflow: hidden; border-radius: 12px; background: #fff; }
+.ios-row { position: relative; display: flex; align-items: center; gap: 14px; min-height: 46px; padding: 0 16px; background: #fff; transition: background 120ms; }
+.ios-row + .ios-row::before { content: ''; position: absolute; top: 0; right: 0; left: 16px; height: 0.5px; background: rgba(60, 60, 67, 0.29); }
+.ios-row.has-icon + .ios-row.has-icon::before { left: 59px; }
+/* A tapped row greys for a moment, as iOS greys a row under a finger. */
+.ios-row.is-tapped { background: #d1d1d6; }
+.ios-row__icon {
+  display: flex; flex: none; align-items: center; justify-content: center; width: 29px; height: 29px;
+  border-radius: 7px; box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+}
+.ios-row__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ios-row__value { flex: none; color: rgba(60, 60, 67, 0.6); }
+.ios-row__chevron { flex: none; margin-left: -8px; color: rgba(60, 60, 67, 0.3); }
+.ios-row__check { flex: none; color: #007aff; }
+.ios-switch { position: relative; flex: none; width: 51px; height: 31px; border-radius: 16px; background: rgba(120, 120, 128, 0.16); transition: background 250ms; }
+.ios-switch.is-on { background: #34c759; }
+.ios-switch__knob {
+  position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16); transition: transform 250ms cubic-bezier(0.3, 0.8, 0.4, 1);
+}
+.ios-switch.is-on .ios-switch__knob { transform: translateX(20px); }
+
+/* StoreFinder: its launch screen, then its first screen, a placeholder
+   (spec §13.8). Its pins wear device.jsx's placeholder brand colour. */
+.sf { position: absolute; inset: 0; background: #f2f2f7; }
+.sf-launch { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #fff; }
+.sf-launch__name { font-size: 28px; font-weight: 700; letter-spacing: 0.2px; }
+.sf-main { position: absolute; inset: 0; padding-top: 62px; background: #f2f2f7; animation: ios-fade 300ms ease-out both; }
+.sf-main__title { padding: 0 20px 12px; font-size: 32px; font-weight: 700; line-height: 38px; }
+.sf-map { position: relative; height: 330px; margin: 0 16px 28px; overflow: hidden; border-radius: 16px; background: #e6ece7; }
+.sf-map__road { position: absolute; background: #fff; }
+.sf-map__road.is-a { top: 120px; left: -20px; right: -20px; height: 18px; transform: rotate(-12deg); }
+.sf-map__road.is-b { top: -20px; bottom: -20px; left: 150px; width: 16px; transform: rotate(8deg); }
+.sf-map__road.is-c { top: 250px; left: -20px; right: -20px; height: 12px; transform: rotate(6deg); }
+.sf-map__park { position: absolute; top: 160px; left: 230px; width: 120px; height: 70px; border-radius: 18px; background: #cfe5d2; }
+.sf-map__pin { position: absolute; color: #0f766e; }
+.sf-map__pin.is-1 { top: 60px; left: 60px; }
+.sf-map__pin.is-2 { top: 90px; left: 250px; }
+.sf-map__pin.is-3 { top: 230px; left: 300px; }
+.sf-map__you {
+  position: absolute; top: 175px; left: 190px; width: 18px; height: 18px; border: 3px solid #fff; border-radius: 50%;
+  background: #007aff; box-shadow: 0 0 0 8px rgba(0, 122, 255, 0.18);
+}
+
 /* Prototype only (spec §3 item 9): dashed, so it never reads as product UI.
-   It sits over the device pane foot's empty middle, clear of the foot's
-   activity on the left and its Live tag on the right. */
+   Since v2 it sits in the top bar's empty middle: the device and its cable
+   now fill the device pane down to its foot. */
 .proto-bar {
-  position: fixed; right: 120px; bottom: var(--space-4); z-index: 500;
+  position: fixed; top: 10px; left: 50%; z-index: 500; transform: translateX(-50%);
   display: flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
   border: 1px dashed var(--fg-muted); border-radius: var(--radius-2); background: var(--canvas-default); box-shadow: var(--shadow-medium);
 }
