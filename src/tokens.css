@@ -51,6 +51,7 @@
   --danger-subtle: #FFEBE9; /* colorSchemes.light.colors.danger.subtle */
   --danger-muted: rgba(255,129,130,0.4); /* colorSchemes.light.colors.danger.muted */
   --attention-fg: #9a6700; /* colorSchemes.light.colors.attention.fg */
+  --attention-emphasis: #9a6700; /* colorSchemes.light.colors.attention.emphasis */
   --attention-subtle: #FFF8C5; /* colorSchemes.light.colors.attention.subtle */
   --attention-muted: rgba(212,167,44,0.4); /* colorSchemes.light.colors.attention.muted */
   --severe-fg: #bc4c00; /* colorSchemes.light.colors.severe.fg */

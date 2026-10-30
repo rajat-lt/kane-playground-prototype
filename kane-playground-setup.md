@@ -2,6 +2,8 @@
 
 What the KaneAI agent playground shows while a real device app session is set up, from the moment the session opens until the app is on screen, and when a setup step fails. Built 30 Oct 2026 from Rajat's brief and the PM's two prototype screens, on top of `design-context/patterns/kane-agent-playground.md` and the automation details prototype's setup state as Rajat reviewed it up to its setup v4 (`rajat-lt/automation-details-prototype`, spec §12 to §12.14).
 
+**v2, 30 Oct 2026 (§13):** the stage moves into the step pane, the device pane shows the device live as it is set up, and a step with failed items no longer stops the setup: it shows as a warning for 2 seconds, then keeps its count. Where §1 to §12 disagree with §13, §13 wins.
+
 Every component and prop below was read from `design-context/COMPONENTS.md` at `6cfb737`. Tokens are generated from `data/tokens.json` on design-context `main` (`scripts/tokens.mjs`, 135 tokens). Icons are lucide 1.58.0, each name checked in the installed package. Mock data only. Items marked **[proposed]** are decisions, not observations, and wait for Rajat.
 
 ---
@@ -223,3 +225,161 @@ Every string follows `ux-text-guidelines.md`: sentence case, no negation, no em-
 - [ ] The spots, once Rajat approves them, into the kit's `gallery/approved/` with their notes.
 - [ ] `guidelines/`: setup and loading states with steps, shared with the automation setup (its §12.10).
 - [ ] The CSS lesson for whoever builds this: set `animation` with its name, or in longhands, and check animations on the built site (§3 item 6).
+
+---
+
+## 13. v2 (30 Oct 2026): the setup in the step pane, the device live
+
+### 13.1 The brief
+
+Rajat's brief, written *v2 item 1* to *v2 item 7* below:
+
+1. Move the setup state to the left, into the step pane, where the user's messages appear.
+2. The right side, where the phone shows in his screenshot, mirrors the real device while it is set up: the app installing, the phone's Settings app opening, the chosen settings turned on or off. It happens on a real device, and the user watches it live.
+3. Mimic that as closely as possible, with the setup state on the left.
+4. Keep the left in step with the device: the step the device is doing is the one the left names, so the user can read about it there.
+5. A step that fails no longer stops the setup (settled with the PM). The step shows as a warning for 2 seconds when it fails; once the setup moves on, the step keeps the count of what failed to apply, since several of the user's chosen settings can fail.
+6. Keep the visual and information hierarchy clear and easy on the eye, on both sides.
+7. Make the device's setup as close to the real thing as possible.
+
+**His screenshot (K3):** the playground with the v1 stage in the step pane (the settings spot, *Applying session settings*, the line typing *Applying each sett*, the five steps), the composer below and no step pane header. The session bar reads *Setting up Session* with a spinner, then a *New Experience* tag, a browser icon, *No environment*, three counts, variables, secrets, *Save* and *Discard Test*. The device pane has a header (*Galaxy S22 · 12 · SampleAPP.ipa.testing.mobil… · Private Cloud · Step recording paused*, then *Start recording* and an icon toggle) over a black phone showing the Apple logo, a cable at its foot.
+
+**Rajat's answers** (30 Oct 2026, binding):
+- While *Applying session settings* runs, the device shows **its home screen, unchanged**. Settings like Auto-Accept Alerts apply in the background; the Settings app opens in the next step, for the app's permissions.
+- The failure demo warns on **app permissions**: Location (*While using the app*) and Precise Location fail, Camera applies. **2 failed.**
+
+### 13.2 What the product's docs say
+
+TestMu AI's documentation, read in full on 30 Oct 2026:
+
+- **Advanced Settings in KaneAI Test Case** (`testmuai.com/support/docs/kaneai-advanced-settings/`): an iOS app test's session settings are Upload File, Auto-Accept Alerts, Auto-Dismiss Alerts, Biometric Authentication, Image Injection, Video Injection, Device Orientation, Capture Network Logs, Network Throttling, Timezone and Language. GPS Location and Network Configuration sit above them.
+- **Authoring Session States** (`…/kaneai-authoring-session/`): a session is *Setting up*, *Authoring Steps*, *Paused* or *Running*. While setting up, the device is brought up and the app installed; nothing is interactive, and adding steps, Save and Reset Session wait. The application view shows *Recording steps* in Authoring Steps and *Step recording paused* in Paused. The authored and queued counts sit above the step list in Authoring Steps and Paused.
+- **iOS App Settings** (`…/appium-ios-app-settings/`): an app's permissions are set through the iOS Settings app: Camera, Contacts, Photos, Notifications, Location and Precise Location. A permission shows on the app's Settings page only after the app has asked for it; set before that, its row is missing and the setting fails. `updateAppSettings` applies an app's settings after it installs and before it launches.
+
+None of them says what the screen shows while a session sets up. Everything below that the docs and Rajat's answers do not cover is marked [proposed].
+
+### 13.3 Structure
+
+| Zone | Setting up | The 2-second warning (failure flow) | Once the app is on screen |
+|---|---|---|---|
+| Session bar | *Setting up* | same | *System idle* |
+| Step pane | **The setup stage**, centred above the composer; no header; composer inactive | The stage, holding the warning | Header (*0 steps*, history, `Pause Test`), the pattern's empty state, composer available |
+| Device pane | Header: *iPhone 18 Pro Max · iOS 27 · storefinder_ios.ipa* and a `Private Cloud` tag; **the device, live**, centred | The device holds on StoreFinder's Settings page | The device, showing StoreFinder |
+
+The stage itself is v1's, unchanged: the step's spot, its name, the sub-step typed out with shimmer and running dots, the reserved note line, the five steps on a rail.
+
+### 13.4 The device, sub-step by sub-step
+
+**One clock drives both panes.** Every device action is timed from the moment the stage shows its sub-step running, after the previous sub-step's half-second tick, so the device never acts ahead of the words (v2 item 4), and changing a sub-step's length moves its device actions with it. Times are the prototype's, from the start of the session; each sub-step shows half a second after it starts, once the previous one's tick has shown.
+
+| Sub-step (left) | The device (right) | Prototype time |
+|---|---|---|
+| Finding an available iPhone 18 Pro Max | The device's outline on a subtle fill, a skeleton: no device yet (`ux-persona.md` §3, transient loading gets a skeleton) [proposed] | 0 to 3s |
+| Allocating the device | The device fades in, the Apple logo on black, as K3 shows [K3; question 11] | 3 to 6s |
+| Checking your app | The home screen: the device is live [proposed] | 6 to 8s |
+| Installing your app | StoreFinder's icon appears on the home screen, dimmed, with a ring filling as it installs and *Installing…* under it; done, it shows whole with its name [proposed, as iOS shows an app installing] | 8 to 22s; the long-step note at 16s |
+| Configuring the device · Reading your settings · Applying each setting | The home screen, unchanged (Rajat's answer) | 22 to 31s |
+| Applying each permission | Settings opens from its icon, scrolls to *Apps*, opens *StoreFinder*, opens *Location*, picks *While Using the App*, turns *Precise Location* on, goes back and turns *Camera* on (the iOS App Settings doc). **Failure flow:** StoreFinder's page has no *Location* row, since the app has yet to ask for it (the same doc), so only *Camera* turns on | 31 to 38s |
+| Waiting for the device to confirm | StoreFinder's page holds, showing what was set | 38 to 42s |
+| *The warning (failure flow only)* | The page holds | 42 to 44s |
+| Opening StoreFinder | Settings closes to the home screen, StoreFinder's icon is tapped, the app opens on its launch screen | 42 to 45s (failure: 44 to 47s) |
+| Waiting for the app to show on screen | StoreFinder's first screen appears | 45 to 48s (failure: 47 to 50s) |
+| *Ready* | StoreFinder stays on screen; the step pane opens for authoring | 48.5s (failure: 50.5s) |
+
+- **How the device acts:** as an automation does, fast and plainly. A tapped row greys for a moment, as iOS greys a row under a finger; pages slide in and back as iOS's do; switches slide; apps grow out of their icons and shrink back. Nothing marks the taps: a real device's screen shows none.
+- **The screens** follow the Settings app as iOS 18 lays it out (*Apps* at the end of Settings, each app's own page, its *Location* page) and an iPhone home screen, drawn with lucide glyphs on coloured tiles, not Apple's icons. iOS 27's own screens are unknown here (§13.8).
+- **The phone** is a black Pro Max-sized frame with its Dynamic Island, side buttons and a white cable at its foot, as in K3, at its real proportions (a 440 by 956 point screen), scaled down to fit the pane. The status bar shows the viewer's own time.
+- **With reduced motion**, the device changes screens at once, without slides, growth or sliding switches; the install ring still fills, since it carries information.
+
+### 13.5 The warning (v2 item 5)
+
+When *Waiting for the device to confirm* ends with failed items, the stage holds the step for 2 seconds, then the setup moves on:
+
+- **The spot holds still:** its loop pauses where it is. The kit has check, plus and x badges only; it has no warning badge to add, and the x would say the step failed outright (C19).
+- **The title** states it: *2 app permissions failed to apply*, in `attention.fg`.
+- **The line** keeps the sub-step, *Waiting for the device to confirm*, with a warning triangle in front, where a finished sub-step shows its tick. No dots and no shimmer: it has finished.
+- **The list** marks the step with the warning triangle and an `LTTag` beside its name: `variant="attention"`, `labelStyle="outline"`, `size="small"`, *2 failed*.
+- **Screen readers** hear *2 app permissions failed to apply. Setup continues.* once.
+- **Then** the next step comes in as usual, and the step keeps its triangle and *2 failed* for the rest of the setup.
+- **Never colour alone:** the triangle, the word *failed* and attention yellow together (`ux-persona.md` §3).
+- **Both sides hold together.** The device stays on StoreFinder's page for the 2 seconds, so the left and the device stay in step (question 14).
+
+### 13.6 Hierarchy (v2 item 6)
+
+- **The stage is the one narrator.** During setup nothing else in the step pane competes with it: no header, the composer inactive.
+- **The device is shown, not told.** The device pane repeats none of the stage's words (no caption, no activity line); the two meet on time, not on text.
+- **The device pane's header recedes:** the facts in `fg.muted` at 14px, one outline tag. The phone is the subject: centred, at the largest size the pane allows (up to 0.8 of its size in points: 0.49 at 1280 by 720, 0.67 at 1440 by 900, 0.8 at 1920 by 1080), a soft shadow, the cable running off the pane's foot as in K3.
+- **The device's facts live in one place**, the device pane's header; the session bar's environment slot goes back to the pattern's (C24).
+- **The warning stays calm:** attention colour on the title, the line's mark, the list's badge and the tag only, with no yellow fills.
+
+### 13.7 Conflicts recorded
+
+| # | Topic | Brief or reference | Guideline or source | Built | Why |
+|---|---|---|---|---|---|
+| C12 | Where the stage sits | v1 answer: the device pane | v2 item 1: the step pane | The step pane | The newer brief |
+| C13 | A failed step | v1 §3 item 4: the setup stops, red | v2 item 5: it carries on | A 2-second warning, then the count; v1's failed state and spot leave the flow | The newer brief |
+| C14 | Warning colour | v2 item 5: a warning | `ux-text-guidelines.md` §4: yellow only when the user has a decision | Attention yellow | The user decides whether to author without those permissions or go back and set them; Rajat's banner carries that choice |
+| C15 | Device header during setup | K3: *Step recording paused*, *Start recording*, an icon toggle | The docs: *Step recording paused* belongs to Paused, and nothing records while setting up | Device facts and *Private Cloud* only | Question 15 |
+| C16 | Step pane header | `kane-agent-playground.md` §3.2: always shown | K3 shows none during setup; the docs put the counts above the list in Authoring Steps and Paused | Hidden while setting up, back once ready | K3 and the docs agree |
+| C17 | Device pane foot | Pattern §3.3: activity, *Live*, a panel toggle | K3: a header, no foot | K3's header, no foot | The newer reference, and one narrator (§13.6) |
+| C18 | K3's device facts | *Galaxy S22 · 12 · SampleAPP.ipa…*, beside an iPhone and *Allocating iPhone 18 Pro Max* | The session's own values | *iPhone 18 Pro Max · iOS 27 · storefinder_ios.ipa*, with K3's `Private Cloud` tag | One session, one set of facts |
+| C19 | The warning's spot | A warning | The kit has no warning badge | The step's own spot, held still | Nothing invented; the x reads as a failure |
+| C20 | Words on the device | iOS's own: *Display & Brightness*, *Ask Next Time Or When I Share*, *Installing…* | `ux-text-guidelines.md` (no *&*, sentence case) | As iOS shows them | They are the device's interface, not ours |
+| C21 | K3's other details | A pink pane border, *Start recording*, an icon toggle, *New Experience*, a browser icon, *No environment*, three counts | Outside the brief; meanings unconfirmed | Left as v1 had them | Outside the brief |
+| C22 | Composer during setup | K3's composer looks available | The docs: nothing is interactive while setting up | Inactive, as v1 | The docs |
+| C23 | Agent state | K3: *Setting up Session* | The docs: *Setting up*; `ux-text-guidelines.md` §2: sentence case | *Setting up*, unchanged | The docs and the guide agree |
+| C24 | The session bar's environment slot | v1 put *iPhone 18 Pro Max · iOS 27* there (§3 item 2) | K3 shows *No environment* there; the pattern's slot is the variable environment, with *Environment unset* as its fallback (`kane-agent-playground.md` §3.1, §5) | *Environment unset*; the device and OS move to the device pane's header | One place for the device's facts (§13.6) |
+
+### 13.8 Gaps
+
+- **iOS 27's screens are unknown here.** The device follows iOS 18's Settings app and home screen; drawn with lucide glyphs on coloured tiles, not Apple's icons, and in iOS's light appearance.
+- **The Apple logo** on the boot screen is the system font's own glyph (U+F8FF), which only Apple's systems draw; elsewhere the screen stays black. No logo artwork is copied into the prototype.
+- **Permissions before the first launch:** the iOS App Settings doc says a permission's row appears only once the app has asked for it, so how KaneAI sets them before launch is unknown (question 12). The success flow draws the rows as present.
+- **StoreFinder's own screens** are placeholders: `mock-data.md` has no app content.
+- **The device's colours are not tokens:** the frame, the wallpaper and iOS's system colours belong to the device, not the page; each is named in `styles.css`.
+- **`attention.emphasis`** joins the generated tokens, for the attention tag's border.
+
+### 13.9 Copy
+
+| Where | Text | Notes |
+|---|---|---|
+| Warning title | *2 app permissions failed to apply* | §5 *{object} failed to {verb}*; the step's own term |
+| Count beside the step | *2 failed* | §2: a label that starts with a number keeps the rest lowercase; `guidelines/lttag.md`: one or two words |
+| Warning announcement | *2 app permissions failed to apply. Setup continues.* | Says what failed and what happens next (§3 Error messages) |
+| Device pane header | *iPhone 18 Pro Max · iOS 27 · storefinder_ios.ipa*, `Private Cloud` | Middle dots (§1 rule 8). *Private Cloud* keeps K3's casing, as the name of an offering; if it is a plain label, §2 makes it *Private cloud* (question 19) |
+
+**Finalists for the warning title:**
+
+| | Text | Why | When to pick it |
+|---|---|---|---|
+| **Recommended** | *2 app permissions failed to apply* | The count first, the step's term, one clause | Default |
+| | *2 of 3 app permissions failed to apply* | Shows the scope | The count alone reads as too alarming |
+| | *Location and Precise Location failed to apply* | Names them | Your banner leaves the names out |
+
+**Finalists for the count:**
+
+| | Text | Why | When to pick it |
+|---|---|---|---|
+| **Recommended** | *2 failed* | Two words, the consequence | Default |
+| | *2 of 3 failed* | The scope as well | The step's settings run to many |
+| | *Failed: 2* | Scans as a field | Several counts sit side by side |
+
+### 13.10 Open questions
+
+Earlier questions, updated: **2** is half answered (the docs name the state *Setting up*; question 18 asks about the one after it). **6** and **7** fall away with the stop-on-failure flow (question 17 keeps the case alive). **8** is answered by the docs: nothing is interactive while setting up. **10** is half answered by K3's header.
+
+11. **While allocating**, does the device show a boot (the Apple logo, as K3) or a placeholder until it is ready?
+12. **Permissions before the first launch:** the iOS App Settings doc says a permission's row appears only once the app has asked for it. How does KaneAI set them before launch? It decides whether the success flow can happen as drawn.
+13. **The app's own prompt:** when StoreFinder launches with Location unset, does its location prompt show, and does Auto-Accept Alerts accept it?
+14. **The 2-second hold:** does the backend wait, or does the device move on while the left holds the warning? The prototype holds both, to stay in step.
+15. **The device header during setup:** a state word (*Setting up*) on its right, or nothing, as built?
+16. **After setup with failed items:** is your banner the only place the count lives, or does the step pane keep the finished list?
+17. **Steps that cannot carry on** (allocation, install, launch): do they still stop the setup, with v1's failed state?
+18. **After setup:** the docs' state is *Authoring Steps*, with *Recording steps* on the application view; `mock-data.md`'s agent status is *system idle*. Which does the session bar show?
+19. **Private Cloud:** the name of an offering (Title Case, as K3) or a plain label (*Private cloud*)?
+
+### 13.11 When v2 ships into design-context/
+
+- [ ] `patterns/kane-agent-playground.md`: the device pane for app sessions (K3's header, the live device), the setup stage in the step pane, the warning state.
+- [ ] `mock-data.md`: the session's device facts and `Private Cloud`; the agent status after setup, once question 18 is answered.
+- [ ] The warning state and its copy, with the guide's §4 note on why yellow fits (C14).

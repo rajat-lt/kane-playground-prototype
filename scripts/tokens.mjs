@@ -93,6 +93,7 @@ const MAP = [
   ['--danger-subtle', L + 'danger.subtle'],
   ['--danger-muted', L + 'danger.muted'],
   ['--attention-fg', L + 'attention.fg'],
+  ['--attention-emphasis', L + 'attention.emphasis'],
   ['--attention-subtle', L + 'attention.subtle'],
   ['--attention-muted', L + 'attention.muted'],
   ['--severe-fg', L + 'severe.fg'],
