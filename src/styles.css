@@ -1,0 +1,712 @@
+/* KaneAI playground prototype. Every colour, size, radius, shadow and space
+   below is a token from src/tokens.css (generated from design-context
+   data/tokens.json) or a multiple of 4 (guidelines/README.md §2). Light theme
+   only. The base, shell, primitives, menus and motion sections are the
+   automation details prototype's, unchanged; the playground and the setup
+   stage follow them. */
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: var(--font-sans);
+  font-size: var(--font-14);
+  line-height: var(--lh-14);
+  color: var(--fg-default);
+  background: var(--canvas-default);
+  min-width: 1280px; /* the smallest breakpoint, guidelines/README.md §2 */
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; }
+:focus-visible { outline: 2px solid var(--focus-outline); outline-offset: 2px; }
+.vh {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.spacer { flex: 1; }
+mark.hl { background: var(--search-hl); color: inherit; border-radius: var(--radius-1); }
+
+/* ---------------- shell (platform-sidebar.md, topbar.md) ---------------- */
+/* Positioned, so it holds the visually hidden text inside scrolled panels
+   (.vh is absolute): without it that text sat below the page and made the
+   page itself scroll once a panel's wheel scroll ran past its end (found
+   28 Oct 2026, in the live v6 build too; spec §4h). */
+.app { position: relative; display: flex; height: 100vh; overflow: hidden; }
+.rail-slot { width: 56px; flex: 0 0 56px; }
+.rail {
+  position: fixed; inset-block: 0; inset-inline-start: 0; z-index: 600;
+  width: 56px; background: var(--canvas-subtle);
+  border-right: 1px solid var(--border-muted);
+  display: flex; flex-direction: column;
+  transition: width 140ms var(--ease-out);
+}
+.rail.open { width: 320px; box-shadow: var(--shadow-overlay); }
+.rail-corner { flex: 0 0 56px; display: flex; align-items: center; padding: 0 var(--space-3); }
+.rail-brand { padding: 0; border: 0; background: none; border-radius: var(--radius-2); cursor: pointer; display: flex; }
+.rail-mark {
+  width: 32px; height: 32px; border-radius: var(--radius-2);
+  background: var(--fg-default); color: var(--fg-on-emphasis);
+  font-weight: var(--weight-bold); font-size: var(--font-14);
+  display: flex; align-items: center; justify-content: center;
+}
+.rail-word { display: flex; flex-direction: column; padding: 0 var(--space-4) var(--space-3); }
+.rail-word strong { font-size: var(--font-14); font-weight: var(--weight-bold); }
+.rail-word em { font-size: var(--font-12); line-height: var(--lh-12); font-style: normal; color: var(--fg-muted); }
+.rail-icons { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+.rail-icon {
+  width: 32px; height: 32px; border-radius: var(--radius-2); color: var(--fg-subtle);
+  display: flex; align-items: center; justify-content: center;
+}
+.rail-icon:hover { background: var(--btn-invisible-hover-bg); color: var(--fg-default); }
+/* Active destination: grey fill only, the sanctioned exception (README §1). */
+.rail-icon.active { background: var(--bg-selected); color: var(--fg-default); }
+.rail-nav { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--space-2); }
+.rail-secondary { padding: 0 var(--space-2) var(--space-2); }
+.rail-nav ul, .rail-secondary ul { list-style: none; margin: 0; padding: 0; }
+.rail-div { height: 1px; border: 0; background: var(--border-muted); margin: var(--space-2) var(--space-3); }
+.navitem {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-1) var(--space-2); border-radius: var(--radius-2); margin-bottom: 2px;
+  color: var(--fg-default); text-decoration: none; min-height: 32px;
+}
+.navitem:hover { background: var(--btn-invisible-hover-bg); }
+.navitem.active { background: var(--bg-selected); font-weight: var(--weight-bold); }
+.navitem-icon { flex: none; color: var(--fg-muted); }
+.navitem-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.navitem-caret { flex: none; color: var(--fg-subtle); }
+.rail-upgrade { width: 100%; border-radius: 0; flex: none; }
+
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.topbar {
+  position: relative; z-index: 500; flex: none;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+  height: 56px; padding: 0 var(--space-6);
+  background: var(--canvas-subtle); border-bottom: 1px solid var(--border-muted);
+}
+.topbar-right { display: flex; align-items: center; gap: var(--space-2); flex: none; }
+/* Controls on the chrome take white fills, or they vanish into it. */
+.topbar .lt-iconbtn--outline { background: var(--canvas-default); }
+.topbar > nav { flex: 1 1 auto; min-width: 0; }
+.crumbs { display: flex; align-items: center; list-style: none; margin: 0; padding: 0; min-width: 0; }
+.crumbs li { display: flex; align-items: center; flex: none; }
+/* v2 item 13: the test run's name takes whatever the bar has left. */
+.crumbs li:last-child { flex: 0 1 auto; min-width: 0; }
+.crumb { color: var(--fg-muted); text-decoration: none; white-space: nowrap; }
+a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
+.crumb.current {
+  display: block; min-width: 0; color: var(--fg-default); font-weight: var(--weight-bold);
+  overflow: hidden; text-overflow: ellipsis;
+}
+.crumb-sep { color: var(--fg-subtle); margin: 0 var(--space-2); }
+.lt-avatar {
+  border-radius: 50%; flex: none; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent-subtle); color: var(--accent-fg);
+  font-size: var(--font-12); font-weight: var(--weight-bold);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+
+
+/* ---------------- primitives ---------------- */
+.status-pill {
+  display: inline-flex; align-items: center; gap: var(--space-1); vertical-align: middle;
+  height: 24px; padding: 0 var(--space-2) 0 var(--space-1); border-radius: var(--radius-pill);
+  color: var(--fg-on-emphasis); font-size: var(--font-14); font-weight: var(--weight-semibold);
+}
+.status-pill--failed { background: var(--danger-emphasis); }
+.status-pill--passed { background: var(--success-emphasis); }
+.status-pill--queued { background: var(--done-emphasis); }
+.status-label { display: inline-flex; }
+.status-glyph { flex: none; display: block; }
+
+.lt-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  border: 1px solid var(--btn-outline-border); border-radius: var(--radius-2);
+  background: var(--btn-outline-bg); color: var(--btn-outline-text);
+  font-size: var(--font-14); font-weight: var(--weight-semibold); line-height: var(--lh-14);
+  white-space: nowrap; cursor: pointer; box-shadow: var(--shadow-btn); flex: none;
+}
+.lt-btn:focus-visible { outline-offset: -2px; }
+.lt-btn--small { height: 28px; padding: 0 var(--space-2); font-size: var(--font-12); }
+.lt-btn--medium { height: 32px; padding: 0 var(--space-3); }
+.lt-btn--large { height: 40px; padding: 0 var(--space-4); }
+.lt-btn:hover { background: var(--btn-hover-bg); }
+.lt-btn:active { background: var(--btn-active-bg); }
+.lt-btn__icon { color: var(--fg-muted); flex: none; }
+.lt-btn__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.lt-btn--invisible { background: transparent; border-color: transparent; box-shadow: none; }
+.lt-btn--invisible:hover { background: var(--btn-invisible-hover-bg); }
+.lt-btn--danger { background: var(--btn-danger-bg); border-color: var(--btn-danger-border); color: var(--btn-danger-text); }
+.lt-btn--danger:hover { background: var(--btn-danger-hover-bg); color: var(--btn-danger-hover-text); }
+.lt-btn--primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); border-color: var(--btn-border); }
+.lt-btn--primary:hover { background: var(--btn-primary-hover-bg); }
+/* Orange is for upgrade and marketing only (guidelines/ltbutton.md). */
+.lt-btn--orange { background: var(--severe-emphasis); color: var(--fg-on-emphasis); border-color: var(--btn-border); }
+.lt-btn--orange:hover { background: var(--severe-fg); }
+.lt-btn.is-inactive, .lt-btn.is-inactive:hover {
+  background: var(--btn-inactive-bg); color: var(--btn-inactive-text); border-color: var(--btn-inactive-bg);
+  cursor: not-allowed; box-shadow: none;
+}
+
+.lt-iconbtn {
+  display: inline-flex; align-items: center; justify-content: center; flex: none; padding: 0;
+  border: 1px solid transparent; border-radius: var(--radius-2);
+  background: transparent; color: var(--fg-muted); cursor: pointer;
+}
+.lt-iconbtn:focus-visible { outline-offset: -2px; }
+.lt-iconbtn--xsmall { width: 20px; height: 20px; }
+.lt-iconbtn--small { width: 28px; height: 28px; }
+.lt-iconbtn--medium { width: 32px; height: 32px; }
+.lt-iconbtn--large { width: 40px; height: 40px; }
+.lt-iconbtn--default { background: var(--btn-bg); border-color: var(--btn-border); }
+.lt-iconbtn--outline { background: var(--btn-outline-bg); border-color: var(--btn-outline-border); box-shadow: var(--shadow-btn); }
+.lt-iconbtn--outline:hover, .lt-iconbtn--default:hover { background: var(--btn-hover-bg); color: var(--fg-default); }
+.lt-iconbtn--invisible:hover { background: var(--btn-invisible-hover-bg); color: var(--fg-default); }
+.lt-iconbtn[aria-expanded="true"] { background: var(--btn-active-bg); color: var(--fg-default); }
+.lt-iconbtn.is-inactive, .lt-iconbtn.is-inactive:hover { color: var(--fg-disabled); cursor: not-allowed; background: transparent; }
+.lt-iconbtn--outline.is-inactive { background: var(--btn-outline-bg); }
+.lt-iconbtn.is-copied { color: var(--success-fg); }
+.lt-iconbtn.on-dark { color: var(--log-btn-icon); }
+.lt-iconbtn.on-dark:hover { background: var(--log-btn-hover-bg); color: var(--log-text-strong); }
+.lt-iconbtn.on-dark.is-inactive { color: var(--log-num); background: transparent; }
+
+.lt-btngroup { display: inline-flex; flex: none; }
+.lt-btngroup > * { border-radius: 0; }
+.lt-btngroup > *:first-child { border-top-left-radius: var(--radius-2); border-bottom-left-radius: var(--radius-2); }
+.lt-btngroup > *:last-child { border-top-right-radius: var(--radius-2); border-bottom-right-radius: var(--radius-2); }
+.lt-btngroup > * + * { margin-left: -1px; }
+
+.lt-counter {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 var(--space-2); border-radius: var(--radius-pill);
+  font-size: var(--font-12); font-weight: var(--weight-semibold); line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.lt-counter--secondary { background: var(--neutral-muted); color: var(--fg-default); }
+.lt-counter--primary { background: var(--bg-neutral-emphasis); color: var(--fg-on-emphasis); }
+.lt-counter--outlined { box-shadow: inset 0 0 0 1px var(--border-default); color: var(--fg-default); }
+
+.lt-tag {
+  display: inline-flex; align-items: center; gap: var(--space-1); flex: none; max-width: 200px; min-width: 0;
+  height: 20px; padding: 0 var(--space-2); border: 1px solid; border-radius: var(--radius-pill);
+  font-size: var(--font-12); font-weight: var(--weight-semibold); line-height: 1; white-space: nowrap;
+}
+.lt-tag__icon { flex: none; }
+.lt-tag__text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lt-tag--secondary { border-color: var(--border-default); color: var(--fg-muted); }
+.lt-tag--danger { border-color: var(--danger-emphasis); color: var(--danger-fg); }
+.lt-tag--success { border-color: var(--success-emphasis); color: var(--success-fg); }
+/* LTToken (v6): a removable filter value, a pill with its remove button. */
+.lt-token {
+  display: inline-flex; align-items: center; gap: 2px; min-width: 0; max-width: 100%; height: 28px;
+  padding: 0 2px 0 var(--space-2); border: 1px solid var(--border-default); border-radius: var(--radius-pill);
+  background: var(--canvas-default); color: var(--fg-default); font-size: var(--font-12); line-height: var(--lh-12);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.lt-token--small { height: 24px; }
+.lt-token.is-selected { border-color: var(--accent-emphasis); }
+.lt-token__text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.lt-token__remove { flex: none; border-radius: var(--radius-pill); }
+
+.lt-link { color: var(--link); text-decoration: none; border-radius: var(--radius-1); }
+.lt-link:hover { text-decoration: underline; }
+.lt-link--muted { color: var(--fg-muted); }
+.lt-link--muted:hover { color: var(--accent-fg); }
+
+.lt-tooltip {
+  position: fixed; z-index: 1200; max-width: 320px;
+  padding: var(--space-1) var(--space-2); border-radius: var(--radius-2);
+  background: var(--neutral-emphasis-plus); color: var(--fg-on-emphasis);
+  font-size: var(--font-12); line-height: var(--lh-12); font-weight: var(--weight-regular); letter-spacing: 0;
+  white-space: normal; overflow-wrap: anywhere; animation: fade-in 120ms var(--ease-out);
+}
+
+.lt-input {
+  position: relative; display: flex; align-items: center; min-width: 0;
+  height: 32px; border: 1px solid var(--border-default); border-radius: var(--radius-2);
+  background: var(--bg-muted); color: var(--fg-default);
+}
+.lt-input--small { height: 28px; }
+.lt-input--large { height: 40px; }
+.lt-input__lead { position: absolute; left: var(--space-2); color: var(--fg-muted); pointer-events: none; }
+.lt-input input {
+  flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; outline: none;
+  padding: 0 var(--space-8) 0 var(--space-8); font-size: var(--font-14); color: inherit;
+}
+.lt-input--small input { font-size: var(--font-12); }
+.lt-input--plain input { padding: 0 var(--space-3); }
+.lt-input input::placeholder { color: var(--fg-subtle); }
+.lt-input input::-webkit-search-cancel-button { display: none; }
+.lt-input:focus-within { border-color: var(--accent-emphasis); box-shadow: inset 0 0 0 1px var(--accent-emphasis); }
+.lt-input__clear {
+  position: absolute; right: var(--space-1); display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border: 0; border-radius: var(--radius-1); background: transparent;
+  color: var(--fg-muted); cursor: pointer;
+}
+.lt-input__clear:hover { background: var(--btn-invisible-hover-bg); color: var(--fg-default); }
+.lt-input--dark { background: var(--log-raised); border-color: var(--log-border); color: var(--log-input-text); }
+.lt-input--dark .lt-input__lead, .lt-input--dark .lt-input__clear { color: var(--log-text-muted); }
+.lt-input--dark input::placeholder { color: var(--log-text-muted); }
+
+/* LTTextarea: label above, caption and error below (guidelines/lttextarea.md). */
+.lt-textarea { display: flex; flex-direction: column; gap: var(--space-1); }
+.lt-textarea__label { font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-semibold); color: var(--fg-default); }
+.lt-textarea__req { margin-left: var(--space-1); }
+.lt-textarea textarea {
+  min-height: 64px; padding: var(--space-2) var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-2);
+  background: var(--canvas-default); color: var(--fg-default); font: inherit; font-size: var(--font-14); line-height: var(--lh-14);
+}
+.lt-textarea textarea::placeholder { color: var(--fg-subtle); }
+.lt-textarea textarea:focus { outline: none; border-color: var(--accent-emphasis); box-shadow: inset 0 0 0 1px var(--accent-emphasis); }
+.lt-textarea.is-error textarea { border-color: var(--danger-emphasis); box-shadow: inset 0 0 0 1px var(--danger-emphasis); }
+.lt-textarea__msg { display: flex; align-items: center; gap: var(--space-1); margin: 0; font-size: var(--font-12); line-height: var(--lh-12); color: var(--danger-fg); }
+.lt-textarea__msg-icon { flex: none; }
+.lt-textarea__caption { margin: 0; font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+
+.lt-skeleton {
+  display: inline-block; flex: none;
+  background: linear-gradient(90deg, var(--neutral-muted) 25%, var(--neutral-subtle) 50%, var(--neutral-muted) 75%);
+  background-size: 200% 100%; animation: shimmer 1.2s linear infinite;
+}
+.sk-gap { margin-top: var(--space-3); display: block; }
+
+.lt-blank { display: flex; flex-direction: column; align-items: center; text-align: center; padding: var(--space-12) var(--space-6); }
+.lt-blank--narrow { max-width: 480px; margin: 0 auto; }
+.lt-blank__heading { margin: 0; font-size: var(--font-16); line-height: var(--lh-16); font-weight: var(--weight-bold); }
+.lt-blank__desc { margin: var(--space-1) 0 0; color: var(--fg-muted); }
+.lt-blank__action { margin-top: var(--space-4); }
+
+.lt-flash {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-3) var(--space-4); border: 1px solid; border-radius: var(--radius-2);
+}
+.lt-flash__text { flex: 1; }
+.lt-flash--danger { background: var(--danger-subtle); border-color: var(--danger-muted); }
+.lt-flash--danger .lt-flash__icon { color: var(--danger-fg); }
+.lt-flash--warning { background: var(--attention-subtle); border-color: var(--attention-muted); }
+.lt-flash--warning .lt-flash__icon { color: var(--attention-fg); }
+
+.lt-table {
+  background: var(--canvas-default); /* v3 item 8: white, even inside a failed command's tint */
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  border: 1px solid var(--border-default); border-radius: var(--radius-2); overflow: hidden;
+}
+.lt-table th {
+  text-align: left; font-size: var(--font-12); line-height: var(--lh-12); font-weight: var(--weight-bold);
+  color: var(--fg-muted); padding: var(--space-2) var(--space-3);
+  background: var(--bg-muted); border-bottom: 1px solid var(--border-default);
+}
+.lt-table td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--neutral-subtle); vertical-align: top; }
+.lt-table tr:last-child td { border-bottom: 0; }
+.lt-table td.mono { font-family: var(--font-mono); font-size: var(--font-12); line-height: var(--lh-14); overflow-wrap: anywhere; }
+/* Field names never break mid-word; the value column takes the rest and wraps. */
+.lt-table th:first-child, .lt-table td:first-child { width: 1%; white-space: nowrap; overflow-wrap: normal; }
+.lt-table__cell { display: flex; align-items: flex-start; gap: var(--space-2); }
+.lt-table__value { flex: 1; min-width: 0; }
+.lt-table__copy { opacity: 0; }
+.lt-table tr:hover .lt-table__copy, .lt-table__copy:focus-visible, .lt-table__copy.is-copied { opacity: 1; }
+
+/* Code surfaces: own theme, dark by default (README §1). */
+.lt-code { position: relative; border: 1px solid var(--border-default); border-radius: var(--radius-2); overflow: hidden; }
+.lt-code--dark { background: var(--log-bg); color: var(--log-text); border-color: var(--log-border); }
+.lt-code--light { background: var(--bg-muted); color: var(--fg-default); }
+.lt-code__head {
+  display: flex; align-items: center; gap: var(--space-2); flex: none;
+  min-height: 44px; padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  border-bottom: 1px solid var(--log-border);
+}
+.lt-code--light .lt-code__head { border-bottom-color: var(--border-default); }
+.lt-code__title { flex: 1; font-size: var(--font-12); line-height: var(--lh-12); font-weight: var(--weight-bold); }
+.lt-code--dark .lt-code__title { color: var(--log-text-strong); }
+.lt-code__actions { display: flex; align-items: center; gap: var(--space-1); margin-left: auto; }
+.code-pre {
+  margin: 0; padding: var(--space-3) var(--space-12) var(--space-3) var(--space-4);
+  font-family: var(--font-mono); font-size: var(--font-12); line-height: var(--lh-14);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.lt-code--dark .tok-key { color: var(--syntax-dark-entity); }
+.lt-code--dark .tok-str { color: var(--syntax-dark-string); }
+.lt-code--dark .tok-num, .lt-code--dark .tok-lit { color: var(--syntax-dark-constant); }
+.lt-code--light .tok-key { color: var(--syntax-light-entity); }
+.lt-code--light .tok-str { color: var(--syntax-light-string); }
+.lt-code--light .tok-num, .lt-code--light .tok-lit { color: var(--syntax-light-constant); }
+
+/* ---------------- menus, tabs, segmented control ---------------- */
+.lt-menu {
+  position: fixed; z-index: 1000; padding: var(--space-2);
+  background: var(--canvas-overlay); border: 1px solid var(--border-default);
+  border-radius: var(--radius-2); box-shadow: var(--shadow-overlay);
+  animation: fade-in 100ms var(--ease-out);
+}
+.lt-menu__item {
+  display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: 32px;
+  padding: 0 var(--space-2); border: 0; border-radius: var(--radius-2);
+  background: transparent; color: var(--fg-default); text-align: left; cursor: pointer;
+}
+/* The grey is the pointer's alone (Rajat, 28 Oct 2026; guidelines/ltactionmenu.md):
+   at rest no item has it, not the first one, which takes focus as the menu
+   opens, nor the selected one, which shows only its tick. Keyboard focus
+   shows the focus ring instead. */
+.lt-menu__item:hover { background: var(--list-hover-bg); }
+.lt-menu__item:focus { outline: none; }
+.lt-menu__item:focus-visible { box-shadow: inset 0 0 0 2px var(--focus-outline); }
+.lt-menu__icon { flex: none; color: var(--fg-muted); }
+.lt-menu__check { flex: none; width: 16px; display: inline-flex; }
+.lt-menu__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.lt-menu__label { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lt-menu__item.has-description { min-height: 44px; padding-top: var(--space-1); padding-bottom: var(--space-1); }
+.lt-menu__desc { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
+/* Inactive: still focusable, the reason written in the item (ltactionmenu.md). */
+.lt-menu__item.is-inactive, .lt-menu__item.is-inactive .lt-menu__icon { color: var(--fg-disabled); cursor: not-allowed; }
+.lt-menu__trail { flex: none; color: var(--fg-muted); font-size: var(--font-12); }
+.lt-menu__item.is-danger, .lt-menu__item.is-danger .lt-menu__icon { color: var(--danger-fg); }
+.lt-menu__item.is-danger:hover { background: var(--list-danger-hover-bg); }
+.lt-menu__divider { height: 1px; margin: var(--space-2) calc(var(--space-2) * -1); background: var(--border-muted); }
+
+.lt-unav {
+  flex: none; display: flex; align-items: center; gap: var(--space-4);
+  min-height: 48px; padding: 0 var(--space-4); border-bottom: 1px solid var(--border-muted);
+}
+.lt-unav nav { min-width: 0; }
+.lt-unav ul { display: flex; gap: var(--space-2); list-style: none; margin: 0; padding: 0; }
+.lt-unav__item {
+  position: relative; display: inline-flex; align-items: center; gap: var(--space-2);
+  height: 48px; padding: 0 var(--space-2); color: var(--fg-default); text-decoration: none; white-space: nowrap;
+}
+.lt-unav__item::before {
+  content: ''; position: absolute; inset: var(--space-2) 0; border-radius: var(--radius-2);
+  background: transparent; z-index: -1; transition: background 120ms;
+}
+.lt-unav__item:hover::before { background: var(--neutral-muted); }
+.lt-unav__item::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+  border-radius: var(--radius-1); background: transparent;
+}
+/* The active underline is LT orange: colors.highlight, measured #ed6105. */
+.lt-unav__item.is-current { font-weight: var(--weight-bold); }
+.lt-unav__item.is-current::after { background: var(--highlight); }
+.lt-unav__item:focus-visible { outline-offset: -4px; }
+.lt-unav__label { display: inline-flex; flex-direction: column; }
+.lt-unav__label::after { content: attr(data-text); height: 0; visibility: hidden; overflow: hidden; font-weight: var(--weight-bold); }
+.lt-unav__trailing { margin-left: auto; flex: none; }
+.lt-unav nav { position: relative; z-index: 0; }
+
+/* v2 item 1: dragging a tab. The other tabs slide to show where it will land. */
+.tabbar { flex: none; }
+.tabbar .lt-unav li { transition: transform 150ms var(--ease-out); }
+.tabbar .lt-unav li.is-dragged { position: relative; z-index: 1; transition: none; }
+.tabbar .lt-unav li.is-dragged .lt-unav__item::before { background: var(--canvas-default); box-shadow: var(--shadow-medium); }
+.tabbar.is-dragging, .tabbar.is-dragging .lt-unav__item { cursor: grabbing; user-select: none; }
+
+/* LTPopover (v2 item 8): canvas overlay, 6px corners, a caret at the anchor. */
+.lt-popover {
+  position: fixed; z-index: 1150; width: max-content; max-width: 360px; pointer-events: none;
+  padding: var(--space-3) var(--space-4); background: var(--canvas-overlay); color: var(--fg-default);
+  border: 1px solid var(--border-default); border-radius: var(--radius-2); box-shadow: var(--shadow-overlay);
+  font-size: var(--font-12); line-height: var(--lh-12); animation: fade-in 120ms var(--ease-out);
+}
+.lt-popover::after {
+  content: ''; position: absolute; width: 10px; height: 10px; transform: rotate(45deg);
+  background: var(--canvas-overlay); border: 1px solid var(--border-default);
+}
+.lt-popover.is-top::after { bottom: -6px; left: calc(var(--caret-x) - 5px); border-top: 0; border-left: 0; }
+.lt-popover.is-bottom::after { top: -6px; left: calc(var(--caret-x) - 5px); border-bottom: 0; border-right: 0; }
+.lt-popover.is-left::after { right: -6px; top: calc(var(--caret-y) - 5px); border-bottom: 0; border-left: 0; }
+.lt-popover.is-right::after { left: -6px; top: calc(var(--caret-y) - 5px); border-top: 0; border-right: 0; }
+.lt-popover__heading { margin: 0 0 var(--space-2); font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); }
+.lt-popover__text { margin: 0; }
+/* v3 item 4: the interactive kind holds actions and text to copy. */
+.lt-popover.is-interactive { pointer-events: auto; min-width: 280px; padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4); }
+.lt-popover__head { display: flex; align-items: flex-start; gap: var(--space-2); }
+.lt-popover.is-interactive .lt-popover__heading { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.lt-popover__actions { flex: none; display: inline-flex; align-items: center; gap: var(--space-1); }
+.lt-popover__close { flex: none; }
+/* Taking over from another popover (v6 item 8): no fade, so nothing blinks. */
+.lt-popover.is-instant { animation: none; }
+/* Failure popover content, most important first (failure.jsx). */
+.fp { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-1); }
+.fp__meta { margin: 0; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+.fp__type { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.fp__error { color: var(--danger-fg); }
+.fp__message { margin: 0; color: var(--fg-default); overflow-wrap: anywhere; }
+.fp__locator { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); }
+.fp__strategy { color: var(--fg-muted); }
+.fp__value { font-family: var(--font-mono); font-size: var(--font-12); color: var(--fg-muted); overflow-wrap: anywhere; }
+.fp__comment { display: flex; gap: var(--space-2); padding: var(--space-2); border-radius: var(--radius-2); background: var(--canvas-subtle); }
+.fp__comment-icon { flex: none; margin-top: var(--space-1); color: var(--fg-muted); }
+.fp__comment-text { margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.fp__comment-by { font-weight: var(--weight-semibold); }
+.fp__actions {
+  display: flex; gap: var(--space-1); margin: var(--space-1) 0 calc(var(--space-1) * -1) calc(var(--space-1) * -1);
+  padding-top: var(--space-2); border-top: 1px solid var(--border-muted);
+}
+.fp__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.fp__item { display: flex; flex-direction: column; gap: var(--space-1); }
+.fp__item + .fp__item { padding-top: var(--space-3); border-top: 1px solid var(--border-muted); }
+.fp__item-head { margin: 0; display: flex; align-items: center; gap: var(--space-2); }
+.fp__name { font-weight: var(--weight-semibold); }
+.fp__times, .fp__more { color: var(--fg-muted); }
+.fp__noted { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--fg-muted); }
+.fp__more { margin: 0; }
+.fp__hint { margin: 0; padding-top: var(--space-2); border-top: 1px solid var(--border-muted); color: var(--fg-muted); }
+
+.lt-seg { display: inline-flex; flex: none; background: var(--seg-bg); border-radius: var(--radius-2); }
+.lt-seg__btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 32px; padding: 0 var(--space-3); border: 1px solid transparent; border-radius: var(--radius-2);
+  background: transparent; color: var(--fg-default); cursor: pointer; white-space: nowrap;
+}
+.lt-seg--small .lt-seg__btn { height: 28px; padding: 0 var(--space-3); font-size: var(--font-12); }
+.lt-seg--icons .lt-seg__btn { width: 32px; padding: 0; color: var(--fg-muted); }
+.lt-seg--icons.lt-seg--small .lt-seg__btn { width: 28px; }
+.lt-seg__btn:not(.is-selected):hover { background: var(--seg-button-hover-bg); }
+.lt-seg__btn.is-selected { background: var(--seg-button-bg); border-color: var(--seg-selected-border); font-weight: var(--weight-semibold); color: var(--fg-default); }
+.lt-seg__btn:focus-visible { outline-offset: -2px; }
+
+
+/* ---------------- motion ---------------- */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide-in { from { transform: translateX(var(--space-6)); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes flash { 0%, 30% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
+  .cmd-flash { animation: none; opacity: 1; }
+  .lt-skeleton { animation: none; }
+}
+
+/* ---------------- top bar: KaneAI, one level deep (topbar.md §3) ---------------- */
+.topbar-product { font-size: var(--font-14); font-weight: var(--weight-bold); }
+
+/* ---------------- primitives the playground adds ---------------- */
+/* LTIconButton variant="primary" (COMPONENTS.md), the composer's Send. */
+.lt-iconbtn--primary { background: var(--btn-primary-bg); border-color: var(--btn-border); color: var(--btn-primary-text); }
+.lt-iconbtn--primary:hover { background: var(--btn-primary-hover-bg); color: var(--btn-primary-text); }
+.lt-iconbtn--primary.is-inactive, .lt-iconbtn--primary.is-inactive:hover {
+  background: var(--btn-inactive-bg); color: var(--btn-inactive-text); border-color: var(--btn-inactive-bg);
+}
+/* LTTag variant="default" (COMPONENTS.md), the session's mode. */
+.lt-tag--default { border-color: var(--border-default); color: var(--fg-default); }
+
+/* ---------------- the playground (kane-agent-playground.md §3, §6) ---------------- */
+.page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* The session bar: full width, an info-blue ground, 8px 16px (§3.1, §6). */
+.session-bar {
+  flex: none; display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-2) var(--space-4); background: var(--accent-subtle); border-bottom: 1px solid var(--border-muted);
+}
+.session-bar__state { font-size: var(--font-14); font-weight: var(--weight-bold); }
+.session-bar__end { margin-left: auto; display: flex; align-items: center; gap: var(--space-3); }
+.panes { flex: 1; min-height: 0; display: flex; }
+/* The step pane: 480px, as on the summary page; the list scrolls, the head
+   and the composer stay (§6). */
+.step-pane {
+  width: 480px; flex: 0 0 480px; min-height: 0; display: flex; flex-direction: column;
+  padding: var(--space-4); border-right: 1px solid var(--border-muted);
+}
+.step-pane__head {
+  flex: none; display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: var(--space-3); border-bottom: 1px solid var(--border-muted);
+}
+.step-pane__count { margin: 0; font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); }
+.step-pane__actions { display: flex; align-items: center; gap: var(--space-2); }
+.step-pane__list { flex: 1; min-height: 0; overflow-y: auto; display: flex; align-items: center; justify-content: center; padding: var(--space-3) 0; }
+.step-pane .lt-blank { text-align: center; }
+/* The composer, pinned at the foot (§3.2, §5). */
+.composer { flex: none; padding: var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-2); }
+.composer.is-waiting { background: var(--canvas-subtle); }
+.composer .lt-textarea textarea { border: 0; padding: 0; box-shadow: none; background: transparent; }
+.composer__row { display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-2); }
+.composer__modes { display: flex; gap: var(--space-1); }
+/* The device pane flexes; its foot stays (§3.3, §6). Its corners take
+   radius 2 (6px): the pattern's 8px is not a token (spec §8). */
+.device-pane { flex: 1; min-width: 0; min-height: 0; display: flex; padding: var(--space-4); }
+.device-pane__frame {
+  flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column;
+  border: 1px solid var(--border-default); border-radius: var(--radius-2); overflow: hidden; background: var(--canvas-default);
+}
+.device-pane__screen { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: var(--space-6); }
+.device-pane__foot {
+  flex: none; display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-2) var(--space-3); border-top: 1px solid var(--border-muted);
+}
+.device-pane__live { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); }
+/* The device, plainly: a bezel, its island and the app's name (spec §8). */
+.phone {
+  position: relative; height: min(100%, 560px); aspect-ratio: 9 / 19.5; display: flex; align-items: center; justify-content: center;
+  border: 8px solid var(--fg-default); border-radius: 40px; background: var(--canvas-default);
+}
+.phone__island { position: absolute; top: 12px; left: 50%; width: 72px; height: 20px; transform: translateX(-50%); border-radius: var(--radius-pill); background: var(--fg-default); }
+.phone__app { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+.phone__icon { color: var(--accent-fg); }
+.phone__name { font-size: var(--font-16); line-height: var(--lh-16); font-weight: var(--weight-bold); }
+
+/* ---------------- session setup (spec kane-playground-setup.md) ---------------- */
+/* The automation setup's stage, carousel, typing, shimmer, dots and list,
+   as its setup v4 left them, with a failed state added and a smaller spot. */
+
+/* LTLoader look-alike: Primer's spinner. */
+.lt-loader { display: block; flex: none; color: var(--accent-fg); animation: lt-spin 1s linear infinite; }
+@keyframes lt-spin { to { transform: rotate(360deg); } }
+
+/* One centred composition, no box; it scrolls when the pane is shorter. */
+.su { flex: 1; min-height: 0; overflow-y: auto; animation: su-fade 300ms var(--ease-out) both; }
+.su-stage {
+  box-sizing: border-box; min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-8); padding: var(--space-8) var(--space-6);
+}
+.su-hero { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 480px; text-align: center; }
+/* Brief item 5: a little smaller than the automation setup's 144 x 136, and
+   rebuilt in the kit at this size, so its line stays 2px. */
+.su-hero__ill { display: block; width: 120px; height: 113px; animation: su-fade 300ms var(--ease-out) both; }
+.su-hero__ill svg { display: block; width: 120px; height: 113px; overflow: visible; }
+.su-hero__title { margin: var(--space-4) 0 0; font-size: var(--font-16); line-height: var(--lh-16); font-weight: var(--weight-bold); }
+.su-hero.is-failed .su-hero__title { color: var(--danger-fg); }
+/* The long-step note keeps its room when hidden, so the stage never jumps. */
+.su-hero__note {
+  min-height: var(--lh-12); margin: var(--space-1) 0 0; color: var(--fg-muted);
+  font-size: var(--font-12); line-height: var(--lh-12); text-wrap: balance;
+  opacity: 0; visibility: hidden; transition: opacity 400ms var(--ease-out), visibility 0s linear 400ms;
+}
+.su-hero__note.is-on { opacity: 1; visibility: visible; transition: opacity 400ms var(--ease-out); }
+
+/* The sub-step carousel, one line; a finished line rises out as the next
+   rises in. */
+.su-carousel { position: relative; width: 100%; height: 24px; margin-top: var(--space-2); overflow: hidden; }
+.su-carousel__item {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+  margin: 0; font-size: var(--font-14); line-height: var(--lh-14); white-space: nowrap;
+}
+.su-carousel__item.is-in { animation: su-rise-in 320ms var(--ease-out) both; }
+.su-carousel__item.is-out { animation: su-rise-out 320ms var(--ease-out) both; }
+@keyframes su-rise-in { from { transform: translateY(100%); opacity: 0; } }
+@keyframes su-rise-out { to { transform: translateY(-100%); opacity: 0; } }
+/* A sub-step's line. The words, invisible, hold its width (the ghost); the
+   typed words sit in the same cell from its left edge; the end slot holds
+   the running dots, so nothing shifts. */
+.su-type { position: relative; display: inline-grid; grid-template-columns: auto 20px; align-items: center; }
+.su-type__ghost, .su-type__text { grid-row: 1; grid-column: 1; white-space: pre; }
+.su-type__ghost { visibility: hidden; }
+.su-type__end { grid-row: 1; grid-column: 2; display: flex; align-items: center; height: var(--lh-14); }
+/* A finished sub-step's green tick, or a failed one's red cross, sits in
+   front of its words, 8px away, hung outside the line's box so the words
+   stay put (automation setup v4 item 1). */
+.su-type__mark { position: absolute; top: 50%; right: 100%; margin-right: var(--space-2); transform: translateY(-50%); }
+.su-type.is-done .su-type__mark { color: var(--success-fg); }
+.su-type.is-failed .su-type__mark, .su-type.is-failed .su-type__text { color: var(--danger-fg); }
+/* Every running sub-step shimmers, a soft band sweeping across its words. */
+.su-type.is-current .su-type__text {
+  background: linear-gradient(90deg, var(--fg-default) 0%, var(--fg-default) 42%, var(--fg-disabled) 50%, var(--fg-default) 58%, var(--fg-default) 100%);
+  background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: su-shimmer 2.4s ease-in-out infinite;
+}
+@keyframes su-shimmer { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+/* The running dots (brief item 8): they appear one by one, hold, and fade
+   together, every 1.5 seconds. Set with longhands, never the `animation`
+   shorthand without a name: the build's CSS minifier collapsed that
+   shorthand to `animation: none` in the automation prototype, so its dots
+   never showed on the live site (spec §3 item 6). Every line's dots keep one
+   rhythm (setup.jsx sets the delay). */
+.su-dots { display: inline-flex; }
+.su-dots.is-waiting { visibility: hidden; }
+.su-dots i {
+  font-style: normal; opacity: 0;
+  animation-name: su-dot-1; animation-duration: 1.5s; animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite; animation-fill-mode: both; animation-delay: var(--su-dots-at, 0ms);
+}
+.su-dots i:nth-child(2) { animation-name: su-dot-2; }
+.su-dots i:nth-child(3) { animation-name: su-dot-3; }
+@keyframes su-dot-1 { 0%, 10% { opacity: 0; } 25%, 85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes su-dot-2 { 0%, 30% { opacity: 0; } 45%, 85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes su-dot-3 { 0%, 50% { opacity: 0; } 65%, 85% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Badges: blue spinner running, green tick done, dashed circle pending, red
+   cross failed. A white disc behind each hides the rail. */
+.su-badge { flex: none; display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--canvas-default); }
+.su-badge.is-done { color: var(--success-fg); }
+.su-badge.is-current { color: var(--accent-fg); }
+.su-badge.is-pending { color: var(--fg-muted); }
+.su-badge.is-failed { color: var(--danger-fg); }
+/* The main steps, in order: a centred block, rows left-aligned on one rail. */
+.su-steps { position: relative; list-style: none; margin: 0; padding: 0; width: fit-content; max-width: 100%; }
+.su-steps::before { content: ''; position: absolute; left: 7.5px; top: 16px; bottom: 16px; width: 1px; background: var(--border-muted); }
+.su-step {
+  position: relative; display: flex; align-items: center; gap: var(--space-2); height: 32px;
+  font-size: var(--font-14); line-height: var(--lh-14); white-space: nowrap;
+}
+.su-step.is-current, .su-step.is-failed { font-weight: var(--weight-semibold); }
+.su-step.is-failed { color: var(--danger-fg); }
+.su-step.is-pending .su-step__title { color: var(--fg-muted); }
+
+@keyframes su-fade { from { opacity: 0; } }
+@keyframes su-reveal { from { opacity: 0; transform: translateY(4px); } }
+.is-revealing { animation: su-reveal 320ms var(--ease-out) both; }
+
+/* The spots' motion (brief item 10): transform and opacity only, each
+   looping for as long as its step runs, like a GIF. The failed spot holds
+   still. */
+.su-hero__ill g { transform-box: fill-box; transform-origin: center; }
+/* Allocating: the magnifier searches in a small loop at the phone's corner. */
+@keyframes su-search {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-3px, -3px) rotate(-4deg); }
+  50% { transform: translate(-1px, -6px) rotate(0deg); }
+  75% { transform: translate(2px, -3px) rotate(4deg); }
+}
+.su-hero__ill #su-allocate-magnifier { animation: su-search 3.2s ease-in-out infinite; }
+/* Installing: the box drops into the phone and fades, then comes again. */
+@keyframes su-drop {
+  0% { transform: translate(0, -4px); opacity: 0; }
+  15%, 45% { transform: translate(0, 0); opacity: 1; }
+  80%, 100% { transform: translate(-12px, 14px) scale(0.6); opacity: 0; }
+}
+.su-hero__ill #su-install-box { animation: su-drop 2.4s ease-in-out infinite; }
+/* Session settings: the gears turn without end, the small ones twice as
+   fast the other way (the automation setup's device spot). */
+@keyframes su-turn { to { transform: rotate(360deg); } }
+@keyframes su-turn-back-twice { to { transform: rotate(-720deg); } }
+.su-hero__ill #su-settings-gear-big { animation: su-turn 8s linear infinite; }
+.su-hero__ill #su-settings-gear-mid,
+.su-hero__ill #su-settings-gear-small { animation: su-turn-back-twice 8s linear infinite; }
+/* Permissions: the key swings from the fist, a pendulum, while the open
+   hand waits; it turns about the top of its chain, the top centre of the
+   key's box (getBBox: 292.3 to 300.7 across, the chain's top at 296.5). */
+@keyframes su-swing { 0%, 100% { transform: rotate(8deg); } 50% { transform: rotate(-8deg); } }
+.su-hero__ill #su-permissions-key { transform-origin: 50% 0%; animation: su-swing 2.4s ease-in-out -0.6s infinite; }
+/* Launching: the rocket bobs along its line of flight, its motion marks
+   flicker, and the smoke drifts back and fades, puff after puff. */
+@keyframes su-bob { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(2px, -2px); } }
+@keyframes su-marks { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes su-puff {
+  0% { transform: translate(3px, -3px) scale(0.7); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translate(-6px, 6px) scale(1.1); opacity: 0; }
+}
+.su-hero__ill #su-launch-rocket { animation: su-bob 1.6s ease-in-out infinite; }
+.su-hero__ill #su-launch-motion { animation: su-marks 0.8s ease-in-out infinite; }
+.su-hero__ill [id^="su-launch-smoke-"] { animation: su-puff 2.4s ease-out infinite; }
+.su-hero__ill #su-launch-smoke-2 { animation-delay: -0.4s; }
+.su-hero__ill #su-launch-smoke-3 { animation-delay: -0.8s; }
+.su-hero__ill #su-launch-smoke-4 { animation-delay: -1.2s; }
+.su-hero__ill #su-launch-smoke-5 { animation-delay: -1.6s; }
+.su-hero__ill #su-launch-smoke-6 { animation-delay: -2s; }
+
+/* Prototype only (spec §3 item 9): dashed, so it never reads as product UI.
+   It sits over the device pane foot's empty middle, clear of the foot's
+   activity on the left and its Live tag on the right. */
+.proto-bar {
+  position: fixed; right: 120px; bottom: var(--space-4); z-index: 500;
+  display: flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+  border: 1px dashed var(--fg-muted); border-radius: var(--radius-2); background: var(--canvas-default); box-shadow: var(--shadow-medium);
+}
+.proto-bar__label { margin-right: var(--space-1); color: var(--fg-muted); font-size: var(--font-12); font-weight: var(--weight-semibold); }
+.proto-bar .lt-seg { margin-right: var(--space-1); }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Spots, the carousel and the shimmer stay still and the words show whole
+     (setup.jsx); the spinner and the running dots keep going, as Primer asks
+     of loading indicators. */
+  .su-hero__ill *, .su-carousel__item { animation: none !important; }
+  .su-carousel__item.is-out { display: none; }
+  .su-type.is-current .su-type__text { animation: none !important; background: none; color: inherit; }
+  .lt-loader { animation-duration: 1s !important; animation-iteration-count: infinite !important; }
+  .su-dots i { animation-duration: 1.5s !important; animation-iteration-count: infinite !important; }
+}
